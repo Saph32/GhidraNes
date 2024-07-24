@@ -16,24 +16,26 @@ public class UxROMMapper extends NesMapper {
     @Override
     public void updateMemoryMapForRom(NesRom rom, Program program, TaskMonitor monitor) throws LockException, MemoryConflictException, AddressOverflowException, CancelledException, DuplicateNameException {
 
-        /* UxROM has switchable 16k PRG ROM banks mapped at 8000-FFFF.
-           The lower bank (fixed at 8000-BFFF) is typically the first bank, and 
-           the upper bank (C000-FFFF) is switchable. */
+        /* UxROM has switchable 16k PRG ROM banks mapped at 8000-BFFF.
+           The upper bank (fixed at C000-FFFF) is typically the last bank, and 
+           the lower bank (8000-BFFF) is switchable. */
         int bankCount = rom.prgRom.length / 0x4000;
 
-        // Load the fixed lower bank (first 16KB)
-        int lowerBankPermissions = MemoryBlockDescription.READ | MemoryBlockDescription.EXECUTE;
-        byte[] lowerBankBytes = Arrays.copyOfRange(rom.prgRom, 0, 0x4000);
-        MemoryBlockDescription.initialized(0x8000, 0x4000, "PRG Lower", lowerBankPermissions, lowerBankBytes, false, monitor)
-            .create(program);
+        // Load switchable lower banks
+        for (int bank = 0; bank < bankCount - 1; bank++) {
+            int lowerBankPermissions = MemoryBlockDescription.READ | MemoryBlockDescription.EXECUTE;
 
-        // Load switchable upper banks
-        for (int bank = 1; bank < bankCount; bank++) {
-            int upperBankPermissions = MemoryBlockDescription.READ | MemoryBlockDescription.EXECUTE;
-
-            byte[] upperBankBytes = Arrays.copyOfRange(rom.prgRom, bank*0x4000, (bank+1)*0x4000);
-            MemoryBlockDescription.initialized(0xC000, 0x4000, "PRG Upper " + bank, upperBankPermissions, upperBankBytes, bank < (bankCount - 1), monitor)
+            byte[] lowerBankBytes = Arrays.copyOfRange(rom.prgRom, bank*0x4000, (bank+1)*0x4000);
+            MemoryBlockDescription.initialized(0x8000, 0x4000, "PRG Lower " + bank, lowerBankPermissions, lowerBankBytes, bank > 0, monitor)
                 .create(program);
         }
+
+        // Load the fixed lower bank (first 16KB)
+        int upperBankPermissions = MemoryBlockDescription.READ | MemoryBlockDescription.EXECUTE;
+        byte[] upperBankBytes = Arrays.copyOfRange(rom.prgRom, 0, 0x4000);
+        MemoryBlockDescription.initialized(0xC000, 0x4000, "PRG Upper", upperBankPermissions, upperBankBytes, false, monitor)
+            .create(program);
+
+
     }
 }

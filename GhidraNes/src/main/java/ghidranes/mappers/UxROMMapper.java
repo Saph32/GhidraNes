@@ -32,7 +32,7 @@ public class UxROMMapper extends NesMapper {
 
         // Load the fixed lower bank (first 16KB)
         int upperBankPermissions = MemoryBlockDescription.READ | MemoryBlockDescription.EXECUTE;
-        byte[] upperBankBytes = Arrays.copyOfRange(rom.prgRom, (bankCount - 1)*0x4000, 0x4000);
+        byte[] upperBankBytes = Arrays.copyOfRange(rom.prgRom, (bankCount - 1)*0x4000, bankCount*0x4000);
         MemoryBlockDescription.initialized(0xC000, 0x4000, "PRG Upper", upperBankPermissions, upperBankBytes, false, monitor)
             .create(program);
 
